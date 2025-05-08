@@ -3,6 +3,9 @@ const assignmentController = require('../controllers/assignmentController');
 
 const router = express.Router();
 
+// Get minimal current assignments data (fast endpoint)
+router.get('/minimal-assignments', assignmentController.getMinimalCurrentAssignments);
+
 // Get assignments for a course
 router.get('/courses/:courseId/assignments', assignmentController.getCourseAssignments);
 

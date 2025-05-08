@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Assignments</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2d3b45;
+            border-bottom: 2px solid #e6e6e6;
+            padding-bottom: 10px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+        .assignments-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .assignment-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .assignment-item:last-child {
+            border-bottom: none;
+        }
+        .assignment-item:hover {
+            background-color: #f9f9f9;
+        }
+        .assignment-info {
+            flex: 1;
+        }
+        .assignment-name {
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+        .assignment-name a {
+            color: #0374B5;
+            text-decoration: none;
+        }
+        .assignment-name a:hover {
+            text-decoration: underline;
+        }
+        .course-name {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        .due-date {
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+            margin-left: 15px;
+        }
+        .past-due {
+            color: #C62828;
+            font-weight: 500;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0374B5;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #025E92;
+        }
+        .timing-info {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .timing-info h3 {
+            margin: 0 0 10px 0;
+            color: #0374B5;
+        }
+        .timing-info p {
+            margin: 5px 0;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0374B5;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to API Home</a>
+
+    <div class="header">
+        <h1>Upcoming Assignments</h1>
+        <button id="refresh-btn" class="btn">Refresh</button>
+    </div>
+
+    <div id="timing-info" class="timing-info" style="display: none;">
+        <h3>Performance Information</h3>
+        <div id="timing-content"></div>
+    </div>
+
+    <div id="assignments-container" class="assignments-list">
+        <div id="loading" class="loading">Loading assignments...</div>
+    </div>
+
+    <script>
+        // DOM elements
+        const assignmentsContainer = document.getElementById('assignments-container');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const timingInfo = document.getElementById('timing-info');
+        const timingContent = document.getElementById('timing-content');
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return 'No due date';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        // Check if date is past due
+        function isPastDue(dateString) {
+            if (!dateString) return false;
+            const dueDate = new Date(dateString);
+            const now = new Date();
+            return dueDate < now;
+        }
+
+        // Fetch minimal assignments
+        async function fetchMinimalAssignments() {
+            assignmentsContainer.innerHTML = '<div id="loading" class="loading">Loading assignments...</div>';
+            timingInfo.style.display = 'none';
+
+            try {
+                const startTime = performance.now();
+                const response = await fetch('/api/minimal-assignments');
+                const data = await response.json();
+                const fetchTime = performance.now() - startTime;
+
+                if (data.assignments && data.assignments.length > 0) {
+                    assignmentsContainer.innerHTML = '';
+
+                    data.assignments.forEach(assignment => {
+                        const isPast = isPastDue(assignment.due_at);
+                        const dueClass = isPast ? 'past-due' : '';
+                        
+                        const assignmentItem = document.createElement('div');
+                        assignmentItem.className = 'assignment-item';
+                        assignmentItem.innerHTML = `
+                            <div class="assignment-info">
+                                <h3 class="assignment-name">
+                                    <a href="${assignment.html_url}" target="_blank">${assignment.name}</a>
+                                </h3>
+                                <p class="course-name">${assignment.course_name}</p>
+                            </div>
+                            <div class="due-date ${dueClass}">${formatDate(assignment.due_at)}</div>
+                        `;
+                        
+                        assignmentsContainer.appendChild(assignmentItem);
+                    });
+                } else {
+                    assignmentsContainer.innerHTML = '<div class="empty-state">No upcoming assignments</div>';
+                }
+
+                // Display timing information
+                if (data.timing) {
+                    const timing = data.timing;
+                    let timingHtml = `
+                        <p><strong>Assignments found:</strong> ${data.count}</p>
+                        <p><strong>Server processing time:</strong> ${timing.totalTimeSec} seconds</p>
+                        <p><strong>Client-side fetch time:</strong> ${(fetchTime / 1000).toFixed(2)} seconds</p>
+                        <p><strong>Total time:</strong> ${((fetchTime + timing.totalTimeMs) / 1000).toFixed(2)} seconds</p>
+                    `;
+
+                    timingContent.innerHTML = timingHtml;
+                    timingInfo.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching minimal assignments:', error);
+                assignmentsContainer.innerHTML = '<div class="empty-state">Error loading assignments</div>';
+            }
+        }
+
+        // Event listeners
+        refreshBtn.addEventListener('click', fetchMinimalAssignments);
+
+        // Initial fetch
+        fetchMinimalAssignments();
+    </script>
+</body>
+</html>

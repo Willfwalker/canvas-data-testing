@@ -6,6 +6,96 @@ const formatTime = require('../utils/formatTime');
  */
 const assignmentController = {
   /**
+   * Get minimal current assignments data (fast endpoint)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  getMinimalCurrentAssignments: async (req, res) => {
+    try {
+      const startTime = Date.now();
+
+      // Get current date and calculate date range for filtering
+      const now = new Date();
+      const pastCutoff = new Date(now);
+      pastCutoff.setDate(pastCutoff.getDate() - 3); // Only show very recent assignments (3 days)
+      const futureCutoff = new Date(now);
+      futureCutoff.setDate(futureCutoff.getDate() + 14); // Only show assignments due in next 2 weeks
+
+      // Format dates for Canvas API
+      const pastCutoffStr = pastCutoff.toISOString();
+      const futureCutoffStr = futureCutoff.toISOString();
+
+      // Get all active courses (minimal data)
+      const courses = await canvasService.getCourses({
+        includeTerms: false,
+        includeTeachers: false,
+        includeTotalScores: false
+      });
+
+      // Use Promise.all to fetch assignments for all courses in parallel
+      const assignmentPromises = courses.map(async (course) => {
+        try {
+          // Get assignments for this course with optimized parameters
+          const assignments = await canvasService.getCourseAssignments(course.id, {
+            includeSubmission: false, // Don't include submission data to keep it light
+            dueAfter: pastCutoffStr,
+            dueBefore: futureCutoffStr,
+            orderBy: 'due_at',
+            perPage: 50
+          });
+
+          // Return only essential assignment data with course info
+          return assignments.map(assignment => ({
+            id: assignment.id,
+            name: assignment.name,
+            due_at: assignment.due_at,
+            points_possible: assignment.points_possible,
+            html_url: assignment.html_url,
+            course_id: course.id,
+            course_name: course.name,
+            course_code: course.course_code
+          }));
+        } catch (error) {
+          console.error(`Error fetching assignments for course ${course.id}:`, error.message);
+          return [];
+        }
+      });
+
+      // Wait for all promises to resolve
+      const assignmentResults = await Promise.all(assignmentPromises);
+
+      // Flatten the array of arrays
+      let currentAssignments = assignmentResults.flat();
+
+      // Sort by due date (ascending)
+      currentAssignments.sort((a, b) => {
+        if (!a.due_at) return 1;
+        if (!b.due_at) return -1;
+        return new Date(a.due_at) - new Date(b.due_at);
+      });
+
+      // Calculate timing information
+      const endTime = Date.now();
+      const totalTimeMs = endTime - startTime;
+
+      // Return minimal data with basic timing
+      res.json({
+        assignments: currentAssignments,
+        count: currentAssignments.length,
+        timing: {
+          totalTimeMs: totalTimeMs,
+          totalTimeSec: (totalTimeMs / 1000).toFixed(2)
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching minimal current assignments:', error.message);
+      res.status(500).json({
+        error: 'Failed to fetch minimal current assignments',
+        details: error.message
+      });
+    }
+  },
+  /**
    * Get assignments for a course
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
