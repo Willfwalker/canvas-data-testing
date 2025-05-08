@@ -64,6 +64,12 @@
         Below are the available endpoints you can use to retrieve data.
     </p>
 
+    <div style="margin: 20px 0; padding: 15px; background-color: #e9f7fd; border-radius: 8px; border: 1px solid #0374B5;">
+        <h3 style="margin-top: 0; color: #0374B5;">New Feature: Two-Stage Data Fetching</h3>
+        <p>Try our new endpoint that demonstrates two-stage data fetching with detailed timing information.</p>
+        <a href="/two-stage-data.html" class="btn" style="background-color: #28a745; margin-top: 5px;">View Two-Stage Data Dashboard</a>
+    </div>
+
     <div class="endpoint">
         <h3>Get All Data</h3>
         <code>GET /api/all-data</code>
@@ -226,25 +232,7 @@
         </div>
     </div>
 
-    <div class="endpoint">
-        <h3>Dashboard Data</h3>
-        <code>GET /api/dashboard</code>
-        <p>Get combined dashboard data including user info, courses, current assignments, and announcements.</p>
-        <div style="display: flex; gap: 10px;">
-            <a href="/api/dashboard" class="btn" target="_blank">View JSON</a>
-            <a href="/dashboard.html" class="btn" style="background-color: #28a745;">View Dashboard</a>
-        </div>
-    </div>
 
-    <div class="endpoint">
-        <h3>Current Assignments</h3>
-        <code>GET /api/current-assignments</code>
-        <p>Get all current and upcoming assignments across all courses.</p>
-        <div style="display: flex; gap: 10px;">
-            <a href="/api/current-assignments" class="btn" target="_blank">View JSON</a>
-            <a href="/assignments.html" class="btn" style="background-color: #28a745;">View Assignments Dashboard</a>
-        </div>
-    </div>
 
     <div class="endpoint">
         <h3>Combined Course Data</h3>
@@ -256,15 +244,7 @@
         </div>
     </div>
 
-    <div class="endpoint">
-        <h3>Minimal Assignments (Fast)</h3>
-        <code>GET /api/minimal-assignments</code>
-        <p>Get minimal assignment data for upcoming assignments (very fast, lightweight endpoint).</p>
-        <div style="display: flex; gap: 10px;">
-            <a href="/api/minimal-assignments" class="btn" target="_blank">View JSON</a>
-            <a href="/minimal-assignments.html" class="btn" style="background-color: #28a745;">View Minimal Assignments</a>
-        </div>
-    </div>
+
 
     <div class="endpoint">
         <h3>Spring 2025 Courses</h3>
@@ -283,6 +263,16 @@
         <div style="display: flex; gap: 10px;">
             <a href="/api/assignment-grades" class="btn" target="_blank">View JSON</a>
             <a href="/assignment-grades.html" class="btn" style="background-color: #28a745;">View Assignment Grades</a>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <h3>Two-Stage Data Fetching</h3>
+        <code>GET /api/two-stage-data</code>
+        <p>First fetches Spring 2025 courses, then loads all assignment details for those courses with detailed timing for each stage.</p>
+        <div style="display: flex; gap: 10px;">
+            <a href="/api/two-stage-data" class="btn" target="_blank">View JSON</a>
+            <a href="/two-stage-data.html" class="btn" style="background-color: #28a745;">View Two-Stage Data</a>
         </div>
     </div>
 

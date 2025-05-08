@@ -9,7 +9,7 @@ const twoStageController = {
    * Get data in two stages:
    * 1. First fetch Spring 2025 courses
    * 2. Then fetch assignment details for those courses
-   * 
+   *
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
    */
@@ -17,18 +17,47 @@ const twoStageController = {
     try {
       const startTime = Date.now();
       const timings = {
-        stage1: { start: 0, end: 0, duration: 0 },
+        stage1: {
+          start: 0,
+          end: 0,
+          duration: 0,
+          courses: { start: 0, end: 0, duration: 0 },
+          announcements: { start: 0, end: 0, duration: 0 }
+        },
         stage2: { start: 0, end: 0, duration: 0 },
         processing: { start: 0, end: 0, duration: 0 }
       };
 
-      // Stage 1: Get Spring 2025 courses
+      // Stage 1: Get Spring 2025 courses and announcements
       timings.stage1.start = Date.now();
+
+      // Get courses
+      timings.stage1.courses.start = Date.now();
       const courses = await canvasService.getSpring2025Courses({
         includeTerms: true,
         includeTeachers: true,
         includeTotalScores: true
       });
+      timings.stage1.courses.end = Date.now();
+      timings.stage1.courses.duration = timings.stage1.courses.end - timings.stage1.courses.start;
+
+      // Get announcements
+      timings.stage1.announcements.start = Date.now();
+      let announcements = [];
+      if (courses && courses.length > 0) {
+        announcements = await canvasService.getAnnouncements(courses, {
+          latestOnly: false,
+          startDate: '2023-01-01'
+        });
+
+        // Sort announcements by posted date (newest first)
+        announcements.sort((a, b) => {
+          return new Date(b.posted_at) - new Date(a.posted_at);
+        });
+      }
+      timings.stage1.announcements.end = Date.now();
+      timings.stage1.announcements.duration = timings.stage1.announcements.end - timings.stage1.announcements.start;
+
       timings.stage1.end = Date.now();
       timings.stage1.duration = timings.stage1.end - timings.stage1.start;
 
@@ -38,6 +67,7 @@ const twoStageController = {
         return res.json({
           stage: 'complete',
           courses: [],
+          announcements: [],
           assignments: [],
           timing: {
             totalTimeMs: endTime - startTime,
@@ -58,7 +88,7 @@ const twoStageController = {
 
         // Extract grade information
         const hasGrade = enrollment && (
-          enrollment.computed_current_score !== undefined || 
+          enrollment.computed_current_score !== undefined ||
           enrollment.computed_final_score !== undefined
         );
 
@@ -174,6 +204,7 @@ const twoStageController = {
       res.json({
         stage: 'complete',
         courses: processedCourses,
+        announcements: announcements,
         courseAssignments: courseAssignmentData,
         assignments: allAssignments,
         timing: {

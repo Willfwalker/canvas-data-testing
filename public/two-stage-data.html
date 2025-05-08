@@ -78,18 +78,37 @@
         .grade-d, .grade-f {
             background-color: #dc3545;
         }
+        .announcement-item {
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .announcement-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .announcement-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        .announcement-content {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="mb-4">Two-Stage Data Fetching</h1>
-        
+
         <div class="row mb-4">
             <div class="col">
                 <button id="refresh-btn" class="btn btn-primary">Refresh Data</button>
             </div>
         </div>
-        
+
         <div id="loading" class="loading">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -97,26 +116,29 @@
             <p>Loading data...</p>
             <div id="stage-status" class="stage-indicator stage-loading">Stage 1: Fetching courses...</div>
         </div>
-        
+
         <!-- Stage 1 Results -->
         <div id="stage1-container" style="display: none;">
             <h2>Stage 1: Spring 2025 Courses</h2>
             <div class="row" id="courses-container"></div>
+
+            <h2 class="mt-4">Announcements</h2>
+            <div id="announcements-container"></div>
         </div>
-        
+
         <!-- Stage 2 Results -->
         <div id="stage2-container" style="display: none;">
             <h2 class="mt-4">Stage 2: Course Assignments</h2>
             <div id="assignments-container"></div>
         </div>
-        
+
         <!-- Timing Information -->
         <div id="timing-info" class="timing-info" style="display: none;">
             <h3>Performance Timing</h3>
             <div id="timing-content"></div>
         </div>
     </div>
-    
+
     <script>
         // DOM elements
         const loadingElement = document.getElementById('loading');
@@ -124,40 +146,41 @@
         const stage1Container = document.getElementById('stage1-container');
         const stage2Container = document.getElementById('stage2-container');
         const coursesContainer = document.getElementById('courses-container');
+        const announcementsContainer = document.getElementById('announcements-container');
         const assignmentsContainer = document.getElementById('assignments-container');
         const refreshBtn = document.getElementById('refresh-btn');
         const timingInfo = document.getElementById('timing-info');
         const timingContent = document.getElementById('timing-content');
-        
+
         // Format date function
         function formatDate(dateString) {
             if (!dateString) return 'No due date';
-            
+
             const date = new Date(dateString);
             const now = new Date();
             const tomorrow = new Date(now);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            
+
             // Check if date is today
             if (date.toDateString() === now.toDateString()) {
                 return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             }
-            
+
             // Check if date is tomorrow
             if (date.toDateString() === tomorrow.toDateString()) {
                 return `Tomorrow at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             }
-            
+
             // Format date
-            return date.toLocaleDateString([], { 
-                weekday: 'short', 
-                month: 'short', 
+            return date.toLocaleDateString([], {
+                weekday: 'short',
+                month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
             });
         }
-        
+
         // Check if date is past due
         function isPastDue(dateString) {
             if (!dateString) return false;
@@ -165,7 +188,7 @@
             const now = new Date();
             return dueDate < now;
         }
-        
+
         // Check if date is due soon (within 48 hours)
         function isDueSoon(dateString) {
             if (!dateString) return false;
@@ -175,7 +198,7 @@
             soonCutoff.setHours(now.getHours() + 48);
             return dueDate > now && dueDate <= soonCutoff;
         }
-        
+
         // Get assignment status class
         function getAssignmentStatusClass(assignment) {
             if (assignment.submission && assignment.submission.submitted_at) {
@@ -188,11 +211,11 @@
                 return 'future';
             }
         }
-        
+
         // Get grade badge class
         function getGradeBadgeClass(gradeLetter) {
             if (!gradeLetter) return '';
-            
+
             const firstChar = gradeLetter.charAt(0).toUpperCase();
             switch (firstChar) {
                 case 'A': return 'grade-a';
@@ -203,20 +226,20 @@
                 default: return '';
             }
         }
-        
+
         // Render courses
         function renderCourses(courses) {
             coursesContainer.innerHTML = '';
-            
+
             if (!courses || courses.length === 0) {
                 coursesContainer.innerHTML = '<div class="col-12"><div class="alert alert-info">No courses found</div></div>';
                 return;
             }
-            
+
             courses.forEach(course => {
                 const courseCard = document.createElement('div');
                 courseCard.className = 'col-md-6 col-lg-4';
-                
+
                 let gradeDisplay = '';
                 if (course.grade !== null && course.grade_letter !== null) {
                     gradeDisplay = `
@@ -227,7 +250,7 @@
                         </div>
                     `;
                 }
-                
+
                 let teachersDisplay = '';
                 if (course.teachers && course.teachers.length > 0) {
                     teachersDisplay = `
@@ -236,7 +259,7 @@
                         </div>
                     `;
                 }
-                
+
                 courseCard.innerHTML = `
                     <div class="card">
                         <div class="card-header">${course.course_code}</div>
@@ -250,44 +273,95 @@
                         </div>
                     </div>
                 `;
-                
+
                 coursesContainer.appendChild(courseCard);
             });
         }
-        
+
+        // Render announcements
+        function renderAnnouncements(announcements) {
+            announcementsContainer.innerHTML = '';
+
+            if (!announcements || announcements.length === 0) {
+                announcementsContainer.innerHTML = '<div class="alert alert-info">No announcements found</div>';
+                return;
+            }
+
+            announcements.forEach(announcement => {
+                const announcementItem = document.createElement('div');
+                announcementItem.className = 'announcement-item';
+
+                // Format the posted date
+                const postedDate = announcement.posted_at ? new Date(announcement.posted_at) : null;
+                const formattedDate = postedDate ? postedDate.toLocaleDateString([], {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : 'Unknown date';
+
+                // Get course name from context_code (format: course_123)
+                let courseName = 'Unknown Course';
+                if (announcement.context_code && announcement.context_code.startsWith('course_')) {
+                    const courseId = parseInt(announcement.context_code.replace('course_', ''));
+                    const course = courses.find(c => c.id === courseId);
+                    if (course) {
+                        courseName = course.name;
+                    }
+                }
+
+                announcementItem.innerHTML = `
+                    <div class="announcement-title">${announcement.title}</div>
+                    <div class="announcement-meta">
+                        <strong>${courseName}</strong> • Posted on ${formattedDate} by ${announcement.user_name || 'Unknown'}
+                    </div>
+                    <div class="announcement-content">
+                        ${announcement.message}
+                    </div>
+                    <div class="mt-2">
+                        <a href="${announcement.html_url}" target="_blank" class="btn btn-sm btn-outline-primary">View in Canvas</a>
+                    </div>
+                `;
+
+                announcementsContainer.appendChild(announcementItem);
+            });
+        }
+
         // Render assignments
         function renderAssignments(courseAssignments) {
             assignmentsContainer.innerHTML = '';
-            
+
             if (!courseAssignments || courseAssignments.length === 0) {
                 assignmentsContainer.innerHTML = '<div class="alert alert-info">No assignments found</div>';
                 return;
             }
-            
+
             courseAssignments.forEach(course => {
                 if (!course.assignments || course.assignments.length === 0) {
                     return;
                 }
-                
+
                 const courseSection = document.createElement('div');
                 courseSection.className = 'mb-4';
-                
+
                 courseSection.innerHTML = `
                     <h4 class="mt-3">${course.course_name} (${course.course_code})</h4>
                     <div class="assignment-list"></div>
                 `;
-                
+
                 const assignmentList = courseSection.querySelector('.assignment-list');
-                
+
                 course.assignments.forEach(assignment => {
                     const statusClass = getAssignmentStatusClass(assignment);
                     const submissionStatus = assignment.submission && assignment.submission.submitted_at
                         ? `<span class="badge bg-success">Submitted</span>`
                         : '';
-                    
+
                     const assignmentItem = document.createElement('div');
                     assignmentItem.className = `assignment-item ${statusClass}`;
-                    
+
                     assignmentItem.innerHTML = `
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
@@ -303,14 +377,14 @@
                             <a href="${assignment.html_url}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
                         </div>
                     `;
-                    
+
                     assignmentList.appendChild(assignmentItem);
                 });
-                
+
                 assignmentsContainer.appendChild(courseSection);
             });
         }
-        
+
         // Fetch data
         async function fetchData() {
             // Reset UI
@@ -318,51 +392,57 @@
             stage1Container.style.display = 'none';
             stage2Container.style.display = 'none';
             timingInfo.style.display = 'none';
-            stageStatus.textContent = 'Stage 1: Fetching courses...';
+            stageStatus.textContent = 'Stage 1: Fetching courses and announcements...';
             stageStatus.className = 'stage-indicator stage-loading';
-            
+
             const fetchStartTime = Date.now();
-            
+
             try {
                 const response = await fetch('/api/two-stage-data');
                 const data = await response.json();
-                
+
                 const fetchTime = Date.now() - fetchStartTime;
-                
+
                 // Hide loading indicator
                 loadingElement.style.display = 'none';
-                
-                // Render stage 1 data (courses)
+
+                // Render stage 1 data (courses and announcements)
                 renderCourses(data.courses);
+                renderAnnouncements(data.announcements);
                 stage1Container.style.display = 'block';
-                
+
                 // Render stage 2 data (assignments)
                 renderAssignments(data.courseAssignments);
                 stage2Container.style.display = 'block';
-                
+
                 // Display timing information
                 if (data.timing) {
                     const timing = data.timing;
                     let timingHtml = `
                         <p><strong>Courses found:</strong> ${data.courses.length}</p>
+                        <p><strong>Announcements found:</strong> ${data.announcements.length}</p>
                         <p><strong>Total assignments:</strong> ${data.assignments.length}</p>
                         <p><strong>Total time:</strong> ${timing.formattedTime} (${timing.totalTimeSec} seconds)</p>
                         <p><strong>Client-side fetch time:</strong> ${(fetchTime / 1000).toFixed(2)} seconds</p>
                     `;
-                    
+
                     // Add breakdown if available
                     if (timing.sections) {
                         const sections = timing.sections;
                         timingHtml += `
                             <h4>Server Performance Breakdown</h4>
                             <ul>
-                                <li><strong>Stage 1 (Fetching courses):</strong> ${(sections.stage1.duration / 1000).toFixed(2)}s (${((sections.stage1.duration / timing.totalTimeMs) * 100).toFixed(1)}%)</li>
+                                <li><strong>Stage 1 (Total):</strong> ${(sections.stage1.duration / 1000).toFixed(2)}s (${((sections.stage1.duration / timing.totalTimeMs) * 100).toFixed(1)}%)</li>
+                                <ul>
+                                    <li><strong>Courses:</strong> ${(sections.stage1.courses.duration / 1000).toFixed(2)}s (${((sections.stage1.courses.duration / timing.totalTimeMs) * 100).toFixed(1)}%)</li>
+                                    <li><strong>Announcements:</strong> ${(sections.stage1.announcements.duration / 1000).toFixed(2)}s (${((sections.stage1.announcements.duration / timing.totalTimeMs) * 100).toFixed(1)}%)</li>
+                                </ul>
                                 <li><strong>Stage 2 (Fetching assignments):</strong> ${(sections.stage2.duration / 1000).toFixed(2)}s (${((sections.stage2.duration / timing.totalTimeMs) * 100).toFixed(1)}%)</li>
                                 <li><strong>Processing data:</strong> ${(sections.processing.duration / 1000).toFixed(2)}s (${((sections.processing.duration / timing.totalTimeMs) * 100).toFixed(1)}%)</li>
                             </ul>
                         `;
                     }
-                    
+
                     timingContent.innerHTML = timingHtml;
                     timingInfo.style.display = 'block';
                 }
@@ -373,10 +453,10 @@
                 stageStatus.className = 'stage-indicator text-danger';
             }
         }
-        
+
         // Event listeners
         refreshBtn.addEventListener('click', fetchData);
-        
+
         // Initial data fetch
         document.addEventListener('DOMContentLoaded', fetchData);
     </script>
