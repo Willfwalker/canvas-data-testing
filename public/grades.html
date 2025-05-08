@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Current Grades</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2d3b45;
+            border-bottom: 2px solid #e6e6e6;
+            padding-bottom: 10px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+        .grades-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .grade-row {
+            display: flex;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        .grade-row:last-child {
+            border-bottom: none;
+        }
+        .grade-row:hover {
+            background-color: #f9f9f9;
+        }
+        .course-info {
+            flex: 1;
+        }
+        .course-name {
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+        .course-code {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        .grade {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .grade-a {
+            color: #4CAF50;
+        }
+        .grade-b {
+            color: #8BC34A;
+        }
+        .grade-c {
+            color: #FFC107;
+        }
+        .grade-d {
+            color: #FF9800;
+        }
+        .grade-f {
+            color: #F44336;
+        }
+        .no-grade {
+            color: #9E9E9E;
+            font-style: italic;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0374B5;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #025E92;
+        }
+        .timing-info {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .timing-info h3 {
+            margin: 0 0 10px 0;
+            color: #0374B5;
+        }
+        .timing-info p {
+            margin: 5px 0;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #0374B5;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .term-label {
+            display: inline-block;
+            background-color: #e0e0e0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to API Home</a>
+
+    <div class="nav-links" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <a href="/grades.html" class="nav-link" style="padding: 8px 16px; background-color: #0374B5; border-radius: 4px; text-decoration: none; color: white;">All Terms</a>
+        <a href="/current-term-grades.html" class="nav-link" style="padding: 8px 16px; background-color: #f1f1f1; border-radius: 4px; text-decoration: none; color: #333;">Current Term Only</a>
+    </div>
+
+    <div class="header">
+        <h1>Current Grades</h1>
+        <button id="refresh-btn" class="btn">Refresh Grades</button>
+    </div>
+
+    <div id="timing-info" class="timing-info" style="display: none;">
+        <h3>Performance Information</h3>
+        <div id="timing-content"></div>
+    </div>
+
+    <div id="grades-container" class="grades-container">
+        <div id="loading" class="loading">Loading grades...</div>
+    </div>
+
+    <script>
+        // DOM elements
+        const gradesContainer = document.getElementById('grades-container');
+        const loadingElement = document.getElementById('loading');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const timingInfo = document.getElementById('timing-info');
+        const timingContent = document.getElementById('timing-content');
+
+        // Get grade class based on letter grade
+        function getGradeClass(grade, letterGrade) {
+            if (!grade && !letterGrade) return 'no-grade';
+
+            if (letterGrade) {
+                const firstChar = letterGrade.charAt(0).toLowerCase();
+                return `grade-${firstChar}`;
+            }
+
+            if (grade >= 90) return 'grade-a';
+            if (grade >= 80) return 'grade-b';
+            if (grade >= 70) return 'grade-c';
+            if (grade >= 60) return 'grade-d';
+            return 'grade-f';
+        }
+
+        // Fetch grades
+        async function fetchGrades() {
+            gradesContainer.innerHTML = '<div id="loading" class="loading">Loading grades...</div>';
+            timingInfo.style.display = 'none';
+
+            try {
+                const startTime = performance.now();
+                const response = await fetch('/api/current-grades');
+                const data = await response.json();
+                const fetchTime = performance.now() - startTime;
+
+                if (data.grades && data.grades.length > 0) {
+                    gradesContainer.innerHTML = '';
+
+                    data.grades.forEach(course => {
+                        const gradeClass = getGradeClass(course.grade, course.grade_letter);
+                        const gradeDisplay = course.grade !== null
+                            ? (course.grade_letter || `${course.grade}%`)
+                            : 'No Grade';
+
+                        const gradeRow = document.createElement('div');
+                        gradeRow.className = 'grade-row';
+                        gradeRow.innerHTML = `
+                            <div class="course-info">
+                                <h3 class="course-name">${course.course_name}
+                                    ${course.term ? `<span class="term-label">${course.term}</span>` : ''}
+                                </h3>
+                                <p class="course-code">${course.course_code}</p>
+                            </div>
+                            <div class="grade ${gradeClass}">${gradeDisplay}</div>
+                        `;
+
+                        gradesContainer.appendChild(gradeRow);
+                    });
+                } else {
+                    gradesContainer.innerHTML = '<div class="empty-state">No grades available</div>';
+                }
+
+                // Display timing information
+                if (data.timing) {
+                    const timing = data.timing;
+                    let timingHtml = `
+                        <p><strong>Courses found:</strong> ${data.count}</p>
+                        <p><strong>Total time:</strong> ${timing.totalTimeFormatted} (${timing.totalTimeSec} seconds)</p>
+                        <p><strong>Client-side fetch time:</strong> ${(fetchTime / 1000).toFixed(2)} seconds</p>
+                    `;
+
+                    // Add breakdown if available
+                    if (timing.breakdown) {
+                        const bd = timing.breakdown;
+                        timingHtml += `
+                            <h4>Server Performance Breakdown</h4>
+                            <ul>
+                                <li><strong>Fetching courses:</strong> ${bd.fetchCourses.durationSec}s (${bd.fetchCourses.percentage})</li>
+                                <li><strong>Processing data:</strong> ${bd.processing.durationSec}s (${bd.processing.percentage})</li>
+                            </ul>
+                        `;
+                    }
+
+                    timingContent.innerHTML = timingHtml;
+                    timingInfo.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching grades:', error);
+                gradesContainer.innerHTML = '<div class="empty-state">Error loading grades</div>';
+            }
+        }
+
+        // Event listeners
+        refreshBtn.addEventListener('click', fetchGrades);
+
+        // Initial fetch
+        fetchGrades();
+    </script>
+</body>
+</html>

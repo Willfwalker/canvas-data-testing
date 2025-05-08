@@ -206,6 +206,46 @@
         <a href="/api/grades" class="btn" target="_blank">Try it</a>
     </div>
 
+    <div class="endpoint">
+        <h3>Current Grades</h3>
+        <code>GET /api/current-grades</code>
+        <p>Get current grades for all courses (fast endpoint).</p>
+        <div style="display: flex; gap: 10px;">
+            <a href="/api/current-grades" class="btn" target="_blank">View JSON</a>
+            <a href="/grades.html" class="btn" style="background-color: #28a745;">View Grades Dashboard</a>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <h3>Current Term Grades</h3>
+        <code>GET /api/current-term-grades</code>
+        <p>Get grades for current term courses only (fast endpoint).</p>
+        <div style="display: flex; gap: 10px;">
+            <a href="/api/current-term-grades" class="btn" target="_blank">View JSON</a>
+            <a href="/current-term-grades.html" class="btn" style="background-color: #28a745;">View Current Term Grades</a>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <h3>Dashboard Data</h3>
+        <code>GET /api/dashboard</code>
+        <p>Get combined dashboard data including user info, courses, current assignments, and announcements.</p>
+        <div style="display: flex; gap: 10px;">
+            <a href="/api/dashboard" class="btn" target="_blank">View JSON</a>
+            <a href="/dashboard.html" class="btn" style="background-color: #28a745;">View Dashboard</a>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <h3>Current Assignments</h3>
+        <code>GET /api/current-assignments</code>
+        <p>Get all current and upcoming assignments across all courses.</p>
+        <div style="display: flex; gap: 10px;">
+            <a href="/api/current-assignments" class="btn" target="_blank">View JSON</a>
+            <a href="/assignments.html" class="btn" style="background-color: #28a745;">View Assignments Dashboard</a>
+        </div>
+    </div>
+
     <h2>Notes</h2>
     <p>
         This server handles pagination automatically for all Canvas API requests.

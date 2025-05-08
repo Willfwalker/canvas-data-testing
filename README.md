@@ -57,7 +57,11 @@ This endpoint handles permission errors gracefully and will return as much data 
 - **Announcements**: `GET /api/announcements`
 - **Calendar Events**: `GET /api/calendar_events`
 - **Todo Items**: `GET /api/todo`
-- **Grades**: `GET /api/grades`
+- **Grades (Detailed)**: `GET /api/grades`
+- **Current Grades (Fast)**: `GET /api/current-grades`
+- **Current Term Grades**: `GET /api/current-term-grades` (only shows grades for the current term)
+- **Current Assignments**: `GET /api/current-assignments`
+- **Dashboard Data**: `GET /api/dashboard` (combines user info, courses, current assignments, and announcements)
 
 ### Error Handling
 
@@ -99,6 +103,75 @@ The `/api/all-data` endpoint includes comprehensive timing information:
 ```
 
 Each course also includes its own timing information, allowing you to identify which courses take the longest to process.
+
+### Dashboard Interface
+
+The server includes three dashboard interfaces:
+
+#### Main Dashboard
+
+A comprehensive dashboard that displays user information, upcoming assignments, and recent announcements. This dashboard is available at:
+
+```
+http://localhost:3000/dashboard.html
+```
+
+Features of the main dashboard:
+- User profile information
+- Quick view of upcoming assignments (with links to Canvas)
+- Recent announcements from all courses
+- Performance timing information
+- One-click refresh of all data
+
+#### Assignments Dashboard
+
+A dedicated dashboard that displays all current and upcoming assignments across all courses. This dashboard is available at:
+
+```
+http://localhost:3000/assignments.html
+```
+
+Features of the assignments dashboard:
+- Displays all current and upcoming assignments
+- Color-coded due dates (past due, due soon, etc.)
+- Filter assignments by course
+- Filter assignments by status (upcoming, past due, due today, due this week)
+- Search assignments by name or description
+- Direct links to view assignments in Canvas
+- Performance timing information
+
+#### Grades Dashboard
+
+A simple dashboard that displays current grades for all courses. This dashboard is available at:
+
+```
+http://localhost:3000/grades.html
+```
+
+Features of the grades dashboard:
+- Displays current grades for all courses
+- Color-coded grades (A, B, C, D, F)
+- Shows both percentage and letter grades when available
+- Includes term information
+- Fast loading with minimal API calls
+- Detailed performance timing information
+
+#### Current Term Grades Dashboard
+
+A focused dashboard that displays grades only for the current term. This dashboard is available at:
+
+```
+http://localhost:3000/current-term-grades.html
+```
+
+Features of the current term grades dashboard:
+- Displays grades only for the current academic term
+- Automatically detects the current term based on the date
+- Calculates and displays current term GPA
+- Color-coded grades (A, B, C, D, F)
+- Shows both percentage and letter grades when available
+- Fast loading with minimal API calls
+- Detailed performance timing information
 
 ## How to Get Your Canvas API Key
 
