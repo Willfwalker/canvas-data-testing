@@ -1,4 +1,5 @@
 const { fetchAllPages } = require('../utils/canvasAPI');
+const env = require('../config/env');
 
 /**
  * Service for Canvas API operations
@@ -116,6 +117,36 @@ const canvasService = {
    */
   getCourseSubmissions: async (courseId) => {
     return await fetchAllPages(`/api/v1/courses/${courseId}/students/submissions?student_ids[]=self`, { silentErrors: true });
+  },
+
+  /**
+   * Get Spring 2025 courses from environment variable
+   * @param {Object} options - Additional options
+   * @returns {Promise<Array>} List of Spring 2025 courses
+   */
+  getSpring2025Courses: async (options = {}) => {
+    const {
+      includeTerms = true,
+      includeTeachers = true,
+      includeTotalScores = true
+    } = options;
+
+    // Get all courses first
+    const allCourses = await canvasService.getCourses({
+      includeTerms,
+      includeTeachers,
+      includeTotalScores
+    });
+
+    // Filter courses by IDs from environment variable
+    const spring2025CourseIds = env.SPRING_2025_COURSE_IDS;
+
+    if (!spring2025CourseIds || spring2025CourseIds.length === 0) {
+      console.warn('No Spring 2025 course IDs found in environment variables');
+      return [];
+    }
+
+    return allCourses.filter(course => spring2025CourseIds.includes(course.id));
   }
 };
 

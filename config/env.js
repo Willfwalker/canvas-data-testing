@@ -7,7 +7,9 @@ dotenv.config();
 const env = {
   PORT: process.env.PORT || 3000,
   CANVAS_URL: process.env.CANVAS_URL,
-  CANVAS_API_KEY: process.env.CANVAS_API_KEY
+  CANVAS_API_KEY: process.env.CANVAS_API_KEY,
+  SPRING_2025_COURSE_IDS: process.env.SPRING_2025_COURSE_IDS ?
+    process.env.SPRING_2025_COURSE_IDS.split(',').map(id => parseInt(id.trim())) : []
 };
 
 // Validate required environment variables
