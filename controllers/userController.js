@@ -1,4 +1,5 @@
 const canvasService = require('../services/canvasService');
+const firebaseService = require('../services/firebaseService');
 
 /**
  * User controller for handling user-related routes
@@ -11,7 +12,13 @@ const userController = {
    */
   getCurrentUser: async (req, res) => {
     try {
-      const userData = await canvasService.getUserInfo();
+      const { uid } = req.user;
+
+      // Get user's Canvas credentials
+      const credentials = await firebaseService.getCanvasCredentials(uid);
+
+      // Get user info from Canvas
+      const userData = await canvasService.getUserInfo(credentials);
       res.json(userData);
     } catch (error) {
       console.error('Error fetching user data:', error.message);
@@ -26,7 +33,13 @@ const userController = {
    */
   getTodoItems: async (req, res) => {
     try {
-      const todo = await canvasService.getTodoItems();
+      const { uid } = req.user;
+
+      // Get user's Canvas credentials
+      const credentials = await firebaseService.getCanvasCredentials(uid);
+
+      // Get todo items from Canvas
+      const todo = await canvasService.getTodoItems(credentials);
       res.json(todo);
     } catch (error) {
       console.error('Error fetching todo items:', error.message);

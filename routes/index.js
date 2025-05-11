@@ -11,15 +11,15 @@ const twoStageRoutes = require('./twoStageRoutes');
 
 const router = express.Router();
 
-// Prefix all routes with /api
-router.use('/api', userRoutes);
-router.use('/api', courseRoutes);
-router.use('/api', assignmentRoutes);
-router.use('/api', announcementRoutes);
-router.use('/api', gradeRoutes);
-router.use('/api', dashboardRoutes);
-router.use('/api', springCoursesRoutes);
-router.use('/api', assignmentGradesRoutes);
-router.use('/api', twoStageRoutes);
+// Mount all routes directly (no additional /api prefix)
+router.use('/', userRoutes);
+router.use('/', courseRoutes);
+router.use('/', assignmentRoutes);
+router.use('/', announcementRoutes);
+router.use('/', gradeRoutes);
+router.use('/', dashboardRoutes);
+router.use('/', springCoursesRoutes);
+router.use('/', assignmentGradesRoutes);
+router.use('/', twoStageRoutes);
 
 module.exports = router;

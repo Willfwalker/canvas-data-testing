@@ -1,4 +1,5 @@
 const canvasService = require('../services/canvasService');
+const firebaseService = require('../services/firebaseService');
 const formatTime = require('../utils/formatTime');
 
 /**
@@ -7,7 +8,7 @@ const formatTime = require('../utils/formatTime');
 const twoStageController = {
   /**
    * Get data in two stages:
-   * 1. First fetch Spring 2025 courses
+   * 1. First fetch current courses from Firestore
    * 2. Then fetch assignment details for those courses
    *
    * @param {Object} req - Express request object
@@ -16,6 +17,8 @@ const twoStageController = {
   getTwoStageData: async (req, res) => {
     try {
       const startTime = Date.now();
+      const { uid } = req.user;
+
       const timings = {
         stage1: {
           start: 0,
@@ -28,15 +31,39 @@ const twoStageController = {
         processing: { start: 0, end: 0, duration: 0 }
       };
 
-      // Stage 1: Get Spring 2025 courses and announcements
+      // Get user's Canvas credentials
+      let credentials;
+      try {
+        credentials = await firebaseService.getCanvasCredentials(uid);
+      } catch (credError) {
+        console.log('Canvas credentials not found, returning empty response');
+        // Return a 200 response with empty data and an error message
+        return res.json({
+          stage: 'complete',
+          courses: [],
+          announcements: [],
+          assignments: [],
+          timing: {
+            totalTimeMs: Date.now() - startTime,
+            totalTimeSec: ((Date.now() - startTime) / 1000).toFixed(2),
+            formattedTime: formatTime(Date.now() - startTime),
+            sections: timings
+          },
+          error: 'Canvas credentials not found. Please set up your Canvas credentials.'
+        });
+      }
+
+      // Stage 1: Get current courses and announcements
       timings.stage1.start = Date.now();
 
       // Get courses
       timings.stage1.courses.start = Date.now();
-      const courses = await canvasService.getSpring2025Courses({
+      const courses = await canvasService.getCurrentCourses({
         includeTerms: true,
         includeTeachers: true,
-        includeTotalScores: true
+        includeTotalScores: true,
+        uid,
+        ...credentials
       });
       timings.stage1.courses.end = Date.now();
       timings.stage1.courses.duration = timings.stage1.courses.end - timings.stage1.courses.start;
@@ -47,7 +74,8 @@ const twoStageController = {
       if (courses && courses.length > 0) {
         announcements = await canvasService.getAnnouncements(courses, {
           latestOnly: false,
-          startDate: '2023-01-01'
+          startDate: '2023-01-01',
+          ...credentials
         });
 
         // Sort announcements by posted date (newest first)
@@ -139,7 +167,8 @@ const twoStageController = {
             dueAfter: pastCutoffStr,
             dueBefore: futureCutoffStr,
             orderBy: 'due_at',
-            perPage: 100
+            perPage: 100,
+            ...credentials
           });
 
           // Add course information to each assignment
@@ -216,7 +245,21 @@ const twoStageController = {
       });
     } catch (error) {
       console.error('Error in two-stage data fetching:', error.message);
-      res.status(500).json({ error: 'Failed to fetch two-stage data', details: error.message });
+
+      // Return a more user-friendly error message with 200 status
+      res.json({
+        stage: 'error',
+        courses: [],
+        announcements: [],
+        assignments: [],
+        timing: {
+          totalTimeMs: 0,
+          totalTimeSec: "0.00",
+          formattedTime: "0s",
+          sections: {}
+        },
+        error: error.message || 'Failed to fetch data'
+      });
     }
   }
 };

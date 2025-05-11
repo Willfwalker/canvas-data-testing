@@ -1,5 +1,28 @@
-const canvasAPI = require('../config/canvas');
-const env = require('../config/env');
+const axios = require('axios');
+
+/**
+ * Create a Canvas API client with the provided credentials
+ * @param {Object} credentials - Canvas API credentials
+ * @returns {Object} - Axios instance configured for Canvas API
+ */
+function createCanvasClient(credentials = {}) {
+  const { canvasUrl, canvasApiKey } = credentials;
+
+  // Use provided credentials or throw an error
+  if (!canvasUrl || !canvasApiKey) {
+    throw new Error('Canvas URL and API key are required');
+  }
+
+  // Create and return Axios instance
+  return axios.create({
+    baseURL: canvasUrl,
+    headers: {
+      'Authorization': `Bearer ${canvasApiKey}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  });
+}
 
 /**
  * Function to handle paginated API requests with optimized pagination
@@ -8,7 +31,17 @@ const env = require('../config/env');
  * @returns {Promise<Array|Object>} - Resolved data from all pages
  */
 async function fetchAllPages(url, options = {}) {
-  const { silentErrors = false, maxPages = 10, logTiming = false } = options;
+  const {
+    silentErrors = false,
+    maxPages = 10,
+    logTiming = false,
+    canvasUrl,
+    canvasApiKey
+  } = options;
+
+  // Create Canvas API client with credentials
+  const canvasClient = createCanvasClient({ canvasUrl, canvasApiKey });
+
   let allData = [];
   let nextUrl = url;
   let pageCount = 0;
@@ -24,7 +57,7 @@ async function fetchAllPages(url, options = {}) {
       const separator = nextUrl.includes('?') ? '&' : '?';
       const urlWithCacheBuster = `${nextUrl}${separator}_=${Date.now()}`;
 
-      const response = await canvasAPI.get(urlWithCacheBuster);
+      const response = await canvasClient.get(urlWithCacheBuster);
       const data = response.data;
 
       const pageEndTime = Date.now();
@@ -64,7 +97,7 @@ async function fetchAllPages(url, options = {}) {
           if (match) {
             // Extract just the path from the full URL
             const fullNextUrl = match[1];
-            nextUrl = fullNextUrl.replace(env.CANVAS_URL, '');
+            nextUrl = fullNextUrl.replace(canvasUrl, '');
           } else {
             nextUrl = null;
           }
